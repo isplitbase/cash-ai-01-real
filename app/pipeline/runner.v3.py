@@ -46,16 +46,15 @@ def run_001_002_003(payload: Dict[str, Any]) -> Dict[str, Any]:
         # cash-ai-01 直下を PYTHONPATH に入れる（google/colabスタブを拾える）
         env["PYTHONPATH"] = str(PROJECT_ROOT)
 
-        _run(["python3", str(ORIGINALS_DIR / "cloab001.py"), "--workdir", str(run_dir)], cwd=ORIGINALS_DIR, env=env)
+        _run(["python3", str(ORIGINALS_DIR / "cloab001.py")], cwd=run_dir, env=env)
+        _run(["python3", str(ORIGINALS_DIR / "cloab002.py")], cwd=run_dir, env=env)
+        _run(["python3", str(ORIGINALS_DIR / "cloab003.py")], cwd=run_dir, env=env)
 
-        # 新cloab001.py（=旧cloab001+002相当）は output.json を生成する想定
-        data_path = run_dir / "output.json"
+        data_path = run_dir / "output_updated.json"
         if not data_path.exists():
-            # 念のため旧仕様（003相当）もフォールバック
-            data_path = run_dir / "output_updated.json"
+            data_path = run_dir / "output.json"
         if not data_path.exists():
-            raise RuntimeError("output.json / output_updated.json が生成されませんでした。")
-
+            raise RuntimeError("output_updated.json / output.json が生成されませんでした。")
 
         data_obj = json.loads(data_path.read_text(encoding="utf-8"))
 
