@@ -7,6 +7,33 @@ import shutil
 from pathlib import Path
 from typing import Any, Dict
 
+
+def _format_kouseihi_two_decimals(obj: Any) -> Any:
+    """Force 前々期構成比/前期構成比/今期構成比 to string with 2 decimals.
+    Applies recursively to list/dict structures. Non-numeric values are left as-is.
+    """
+    keys = {"前々期構成比", "前期構成比", "今期構成比"}
+
+    if isinstance(obj, list):
+        for i, v in enumerate(obj):
+            obj[i] = _format_kouseihi_two_decimals(v)
+        return obj
+
+    if isinstance(obj, dict):
+        for k, v in list(obj.items()):
+            if k in keys and v is not None:
+                try:
+                    # accept int/float/numeric strings
+                    num = float(v)
+                    obj[k] = f"{num:.2f}"
+                except Exception:
+                    pass
+            else:
+                obj[k] = _format_kouseihi_two_decimals(v)
+        return obj
+
+    return obj
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]  # ~/cash-ai-01
 ORIGINALS_DIR = PROJECT_ROOT / "app" / "pipeline" / "originals"
 
@@ -67,6 +94,9 @@ def run_001_002_003(payload: Dict[str, Any]) -> Dict[str, Any]:
             except Exception:
                 output_obj = None
 
+        _format_kouseihi_two_decimals(data_obj)
+        if output_obj is not None:
+            _format_kouseihi_two_decimals(output_obj)
         return {"data": data_obj, "output": output_obj}
 
     finally:
