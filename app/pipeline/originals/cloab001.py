@@ -70,6 +70,44 @@ import csv
 from pathlib import Path
 from google.colab import userdata
 import anthropic
+# ============================================================
+# 共通ユーティリティ関数
+# ============================================================
+
+def to_int_safe_bs(s):
+    if s is None:
+        return 0
+    if isinstance(s, (int, float)):
+        return int(s)
+    s = str(s).replace(",", "").replace(" ", "").replace("　", "")
+    if s == "" or s == "-" or s == "ー":
+        return 0
+    if "△" in s or "▲" in s:
+        s = s.replace("△", "").replace("▲", "")
+        try:
+            return -int(s)
+        except ValueError:
+            return 0
+    try:
+        return int(s)
+    except ValueError:
+        return 0
+
+def _normalize_account_name(name: str) -> str:
+    """勘定科目名を正規化する。"""
+    name = str(name).strip()
+    name = name.replace(" ", "").replace("　", "")  # 全角半角スペース除去
+    name = name.replace("・", "").replace("・", "")  # 中点除去
+    name = name.replace("勘定科目", "").replace("科目", "")  # 「勘定科目」などの語句を除去
+    return name
+
+def _get_amount_triplet(item: dict) -> list:
+    """辞書から今期、前期、前々期の金額を整数で取得する。"""
+    now_val = to_int_safe_bs(item.get("今期", {}).get("金額", 0) if isinstance(item.get("今期"), dict) else item.get("今期", 0))
+    prev_val = to_int_safe_bs(item.get("前期", {}).get("金額", 0) if isinstance(item.get("前期"), dict) else item.get("前期", 0))
+    prev2_val = to_int_safe_bs(item.get("前々期", {}).get("金額", 0) if isinstance(item.get("前々期"), dict) else item.get("前々期", 0))
+    return [now_val, prev_val, prev2_val]
+
 
 # -----------------------------
 # 1. 共通設定（そのまま使ってください）
@@ -570,43 +608,6 @@ if not DATA_PATH.exists():
 with DATA_PATH.open(encoding="utf-8") as f:
     source_data = json.load(f)
 
-# ============================================================
-# 共通ユーティリティ関数
-# ============================================================
-
-def to_int_safe_bs(s):
-    if s is None:
-        return 0
-    if isinstance(s, (int, float)):
-        return int(s)
-    s = str(s).replace(",", "").replace(" ", "").replace("　", "")
-    if s == "" or s == "-" or s == "ー":
-        return 0
-    if "△" in s or "▲" in s:
-        s = s.replace("△", "").replace("▲", "")
-        try:
-            return -int(s)
-        except ValueError:
-            return 0
-    try:
-        return int(s)
-    except ValueError:
-        return 0
-
-def _normalize_account_name(name: str) -> str:
-    """勘定科目名を正規化する。"""
-    name = str(name).strip()
-    name = name.replace(" ", "").replace("　", "")  # 全角半角スペース除去
-    name = name.replace("・", "").replace("・", "")  # 中点除去
-    name = name.replace("勘定科目", "").replace("科目", "")  # 「勘定科目」などの語句を除去
-    return name
-
-def _get_amount_triplet(item: dict) -> list:
-    """辞書から今期、前期、前々期の金額を整数で取得する。"""
-    now_val = to_int_safe_bs(item.get("今期", {}).get("金額", 0) if isinstance(item.get("今期"), dict) else item.get("今期", 0))
-    prev_val = to_int_safe_bs(item.get("前期", {}).get("金額", 0) if isinstance(item.get("前期"), dict) else item.get("前期", 0))
-    prev2_val = to_int_safe_bs(item.get("前々期", {}).get("金額", 0) if isinstance(item.get("前々期"), dict) else item.get("前々期", 0))
-    return [now_val, prev_val, prev2_val]
 
 
 # ============================================================
